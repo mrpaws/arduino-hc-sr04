@@ -34,6 +34,8 @@
      *MFR. suggests 60ms measurement cycle minimum to avoid mixing signals.
  */
 
+/* Declarations */
+
 
 /* Set our trigger and echo pulse pins and LED pins */
 const int redPin = 3;
@@ -42,9 +44,14 @@ const int greenPin = 5;
 const int trigPin = 6;
 const int echoPin = 7;
 
+
 bool is_red = false;
 bool is_yellow = false;
 bool is_green = false;
+
+void switchLED(void (*func)());
+
+/* Procedures */
 
 void setup() {
   /* initialize serial communication for testing */
@@ -80,41 +87,57 @@ void loop()
   inches = microsecondsToInches(duration);
   cm = microsecondsToCentimeters(duration);
 
-  if ( ( inches <  60 ) && ( is_yellow == false )  ) { 
+  if ( (inches <  60) && ( inches  > 24 ) ) { 
     /* turn yellow when less than 5 feet */
-    switchLED(&setYellow);
-    goto delay; 
+    stateCheck(yellowPin);
   }
-  else if ( ( inches < 24 ) && ( is_red == false)  ) { 
+  else if ( inches < 24 ) { 
     /* turn red when less than 2 feet */
-    switchLED(&setRed);
-    goto delay;
+    stateCheck(redPin);
   }
   else if ( inches > 1600 ) {
-    /* ignore if the echo never returns. may be processor */
-    goto delay; 
+    stateCheck(0);
   }
-  else {
-    if ( is_green == false ) {
-      switchLED(&setGreen);
-    }
+  else if ( inches > 60 ) {
+    stateCheck(greenPin);
   }
-/*
-  print console info 
 
+  /* print console info */
   Serial.print(inches);
-  Serial.print("in, ");
-  Serial.print(cm);
-  Serial.print("cm");
+  Serial.print("in");
   Serial.println();
-*/
   
   /* Datasheet recommends 60ms test intervals */
-  delay:
-  delay(60);
+  delay(3000);
 }
 
-void switchLED(void (*LEDaction)()) {
+void stateCheck(int led) {
+  /* examine the state of all LEDs, update if necessary */
+  if ( led == redPin ) { 
+    if ( is_red == false ) {
+      switchLED(&setRed);
+      Serial.print("State change: RED");
+      Serial.println();
+
+    } 
+  }
+  else if ( led == yellowPin ) {
+    if ( is_yellow == false ) { 
+      switchLED(&setYellow);
+      Serial.print("State change: YELLOW");
+      Serial.println();
+    }
+  }
+  else if ( led == greenPin ) {
+    if ( is_green == false ) {
+      switchLED(&setGreen);
+      Serial.print("State change: GREEN");
+      Serial.println();
+    }
+  }
+}
+
+void switchLED(void (*LEDAction)()) {
   /* switches to given LED */
   clearLEDs();
   (*LEDAction)();
