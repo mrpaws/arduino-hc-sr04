@@ -1,9 +1,10 @@
 /* 
-   HC-SR04 Sensor Serial Outputter 
+   HC-SR04 Sensor Stoplight Device
    Matt Pawelski
    
    Adapated from PING))) Arduino example code for
    relatively inexpensive HC-SR04.    
+
    PING))) Tutorial:
      http://www.arduino.cc/en/Tutorial/Ping
    HC-SR04 Datasheet:
@@ -35,24 +36,54 @@
      range = high level time * velocity (340M/S) / 2;
      
      *MFR. suggests 60ms measurement cycle minimum to avoid mixing signals.
- */
+ 
+    ToDo: 
+      - (Performance) Don't bother converting distance unless console output is requested, just
+        set thresholds based on uS response
+      - (Usability) Manage error condition better:  If sensor cannot reliably determine distance
+        then flash the last known light rapidly.
+        position.
+      - (Oops)Merge this back to the mainline due to improvements in sensor handling code.
+      - Modularize and abstract from procedural approach. Or, leave like this for efficiency
+        since this is hardware?
+*/
+
+/* Preprocessing */
+
+/* Adjust these to suit your needs.  Be sure to observe max ranges */
+#define DISTANCE_UNIT inches
+#define RED_LENGTH 24
+#define YELLOW_LENGTH 48
+#define GREEN_LENGTH 48
+#define ERROR_LENGTH 1600
+#define PRINT_VALUES false
 
 /* Declarations */
 
-
-/* Set our trigger and echo pulse pins and LED pins */
+/* Trigger, echo pulse pins and LED pins */
 const int redPin = 3;
 const int yellowPin = 4;
 const int greenPin = 5;
 const int trigPin = 6;
 const int echoPin = 7;
 
-
+/* States */
 bool is_red = false;
 bool is_yellow = false;
 bool is_green = false;
 
-void switchLED(void (*func)());
+/* Functions */
+void stateCheck(int led) ;
+void switchLED(void (*LEDAction)()) ;
+void clearLEDs(void);
+void setGreen(void);
+void setYellow(void);
+void setRed(void);
+void unsetGreen(void) ;
+void unsetYellow(void) ;
+void unsetRed(void);
+long uSToInches(long microseconds);
+long uSToCentimeters(long microseconds);
 
 /* Procedures */
 
@@ -64,54 +95,55 @@ void setup() {
   pinMode(trigPin, OUTPUT);
   pinMode(redPin, OUTPUT);
   pinMode(yellowPin, OUTPUT);
-  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
 }
 
 void loop()
 {
+  /* main Main MAIN */
+
   /* duration (in microseconds(uS)) */
   long duration, inches, cm;
 
-  /* 
-      Fire LOW pulse beforehand to ensure a clean HIGH pulse: <-- this may be unnecessary with hc-sr04
-      Fire the trigger pulse (10uS);
-  */
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
+  /* Fire the trigger pulse (10uS) */
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
 
   /* capture the response pulse from the echo pin */
-  //  pinMode(echoPin, INPUT);
   duration = pulseIn(echoPin, HIGH);
 
-  /* convert the time into a distance */
-  inches = microsecondsToInches(duration);
-  cm = microsecondsToCentimeters(duration);
+  /* convert the time into a distance */ 
+  inches = uSToInches(duration);
 
-  if ( (inches <  60) && ( inches  > 24 ) ) { 
-    /* turn yellow when less than 5 feet */
+  /* compare most recent sensory data to current state */ 
+  if ( (inches <=  YELLOW_LENGTH) && ( inches  > RED_LENGTH ) ) { 
     stateCheck(yellowPin);
   }
-  else if ( inches < 24 ) { 
-    /* turn red when less than 2 feet */
+  else if ( inches <= RED_LENGTH ) { 
     stateCheck(redPin);
   }
-  else if ( inches > 1600 ) {
+  else if ( inches >= ERROR_LENGTH ) {
     stateCheck(0);
   }
-  else if ( inches > 60 ) {
+  else if ( inches > GREEN_LENGTH ) {
     stateCheck(greenPin);
   }
 
-  /* print console info */
-  Serial.print(inches);
+  /* print values to the console if requested */
+  if ( PRINT_VALUES == true ) {
+    printValues(inches);
+  }
+
+  /* Datasheet recommends 60ms test intervals */
+  delay(60);
+}
+
+void printValues(long distance) {
+  /* print out values to console */
+  Serial.print(distance);
   Serial.print("in");
   Serial.println();
-  
-  /* Datasheet recommends 60ms test intervals */
-  delay(3000);
 }
 
 void stateCheck(int led) {
@@ -189,7 +221,7 @@ void unsetRed(void) {
   is_red = false;
 }
 
-long microsecondsToInches(long microseconds)
+long uSToInches(long microseconds)
 {
   /* 
      convert the response pulse duration from microseconds
@@ -199,7 +231,7 @@ long microsecondsToInches(long microseconds)
   return microseconds / 148 ;
 }
 
-long microsecondsToCentimeters(long microseconds)
+long uSToCentimeters(long microseconds)
 {
   /* 
      convert the response pulse duration from microseconds
