@@ -38,16 +38,24 @@
      
      *MFR. suggests 60ms measurement cycle minimum to avoid mixing signals.
  
-    ToDo: 
+    ToDo/Notes: 
       - (Performance) Don't bother converting distance unless console output is requested, just
         set thresholds based on uS response
       - (Usability) Manage error condition better:  If sensor cannot reliably determine distance
         then flash the last known light rapidly.
-        position.
       - (Oops)Merge this back to the mainline due to improvements in sensor handling code.
-      - Modularize and abstract from procedural approach. Or, leave like this for efficiency
+      - (OOP)Modularize and abstract from procedural approach. Or, leave like this for efficiency
         since this is hardware?
-      - Add parameters to allow for unit system specification.
+      - (Usability)Add parameters to allow for unit system specification.
+      - (Cross-Compatability)Is the error length value microcontroller dependent or range sensor dependent?
+      - (Policy Rant)Is it necessarily an error if they don't return?  
+        May need to add a counter and accumulate them to judge whether there is just nothing in
+        front of the sensor or if it is an error. The harm is that if we flash green on error, 
+        if you're close but can manage to trick the sensor, you could be 3 inches away and flashing green.
+        The logic would fail if being used to prevent a moving object from proceeding into an obstacle.
+        Apply the above thought in reverse though, and we can simply make switching to green more strict.
+        I think the weakness in a single data stream is revealed here.  Another sensor could provide
+        reliability by confirming the primary data source.
 */
 
 /* Preprocessing */
@@ -153,14 +161,22 @@ void printValues(long distance) {
 
 void stateCheck(int led) {
   /* examine the state of all LEDs, update if necessary */
-  if ( led == redPin ) { 
+  if ( led == greenPin ) {
+    if ( is_green == false ) {
+      switchLED(&setGreen);
+      if ( PRINT_DEBUG == true ) {
+        Serial.print("State change: RED");
+        Serial.println();
+      }
+    }
+  }
+  else if ( led == redPin ) { 
     if ( is_red == false ) {
       switchLED(&setRed);
       if ( PRINT_DEBUG == true ) { 
         Serial.print("State change: RED");
         Serial.println();
       }
-
     } 
   }
   else if ( led == yellowPin ) {
@@ -168,16 +184,6 @@ void stateCheck(int led) {
       switchLED(&setYellow);
       if ( PRINT_DEBUG == true ) {
         Serial.print("State change: YELLOW");
-        Serial.println();
-      }
-
-    }
-  }
-  else if ( led == greenPin ) {
-    if ( is_green == false ) {
-      switchLED(&setGreen);
-      if ( PRINT_DEBUG == true ) {
-        Serial.print("State change: RED");
         Serial.println();
       }
     }
