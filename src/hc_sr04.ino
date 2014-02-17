@@ -20,11 +20,14 @@
      Echo Output Signal Input TTL lever signal and the range in proportion
      Dimension 45*20*15mm 
      
-   Arduino connection to circuit:
+   Arduino connections to circuit:
+        * Red LED connection attached to pin 3
+        * Yellow LED connection attached to pin 4
+        * Green LED connection attached to pin 5
    	* VCC connection of the HC-SR04 attached to +5V
 	* GND connection of the HC-SR04 attached to ground
 	* TRIG connection of the HC-SR04 attached to pin 6
-	GH* ECHO connection of the HC-SR04 attached to pin 7
+	* ECHO connection of the HC-SR04 attached to pin 7
 
    Distance Formulas:
      uS / 58 = centimeter
