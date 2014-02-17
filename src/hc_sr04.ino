@@ -24,7 +24,7 @@
    	* VCC connection of the HC-SR04 attached to +5V
 	* GND connection of the HC-SR04 attached to ground
 	* TRIG connection of the HC-SR04 attached to pin 6
-	* ECHO connection of the HC-SR04 attached to pin 7
+	GH* ECHO connection of the HC-SR04 attached to pin 7
 
    Distance Formulas:
      uS / 58 = centimeter
@@ -35,9 +35,16 @@
  */
 
 
-/* Set our trigger and echo pulse pins */
+/* Set our trigger and echo pulse pins and LED pins */
+const int redPin = 3;
+const int yellowPin = 4;
+const int greenPin = 5;
 const int trigPin = 6;
 const int echoPin = 7;
+
+bool is_red = false;
+bool is_yellow = false;
+bool is_green = false;
 
 void setup() {
   /* initialize serial communication for testing */
@@ -45,6 +52,9 @@ void setup() {
   /* set our echo and trig pin modes here to save processing time */
   pinMode(echoPin, INPUT);
   pinMode(trigPin, OUTPUT);
+  pinMode(redPin, OUTPUT);
+  pinMode(yellowPin, OUTPUT);
+  pinMode(redPin, OUTPUT);
 }
 
 void loop()
@@ -69,16 +79,88 @@ void loop()
   /* convert the time into a distance */
   inches = microsecondsToInches(duration);
   cm = microsecondsToCentimeters(duration);
-  
-  /* print console info */
+
+  if ( ( inches <  60 ) && ( is_yellow == false )  ) { 
+    /* turn yellow when less than 5 feet */
+    switchLED(&setYellow);
+    goto delay; 
+  }
+  else if ( ( inches < 24 ) && ( is_red == false)  ) { 
+    /* turn red when less than 2 feet */
+    switchLED(&setRed);
+    goto delay;
+  }
+  else if ( inches > 1600 ) {
+    /* ignore if the echo never returns. may be processor */
+    goto delay; 
+  }
+  else {
+    if ( is_green == false ) {
+      switchLED(&setGreen);
+    }
+  }
+/*
+  print console info 
+
   Serial.print(inches);
   Serial.print("in, ");
   Serial.print(cm);
   Serial.print("cm");
   Serial.println();
+*/
   
   /* Datasheet recommends 60ms test intervals */
+  delay:
   delay(60);
+}
+
+void switchLED(void (*LEDaction)()) {
+  /* switches to given LED */
+  clearLEDs();
+  (*LEDAction)();
+}
+
+void clearLEDs(void) { 
+  /* clear all Pins */
+  unsetRed();
+  unsetYellow();
+  unsetGreen();
+}
+
+void setGreen(void) {
+  /* set green */ 
+  digitalWrite(greenPin, HIGH);
+  is_green = true;
+}
+
+void setYellow(void) {
+  /* set yellow */
+  digitalWrite(yellowPin, HIGH);
+  is_yellow = true;
+}
+
+void setRed(void) {
+  /* set green */
+  digitalWrite(redPin, HIGH);
+  is_red = true;
+}
+
+void unsetGreen(void) {
+  /* unset green */
+  digitalWrite(greenPin, LOW);
+  is_green = false;
+}
+
+void unsetYellow(void) {
+  /* unset yellow */
+  digitalWrite(yellowPin, LOW);
+  is_yellow = false;
+}
+
+void unsetRed(void) {
+  /* unset green */
+  digitalWrite(redPin, LOW);
+  is_red = false;
 }
 
 long microsecondsToInches(long microseconds)
