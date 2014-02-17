@@ -1,6 +1,7 @@
 /* 
-   HC-SR04 Sensor Stoplight Device
+   HC-SR04 Ultrasonic Range Sensor Stoplight Application
    Matt Pawelski
+   02/17/2014
    
    Adapated from PING))) Arduino example code for
    relatively inexpensive HC-SR04.    
@@ -46,6 +47,7 @@
       - (Oops)Merge this back to the mainline due to improvements in sensor handling code.
       - Modularize and abstract from procedural approach. Or, leave like this for efficiency
         since this is hardware?
+      - Add parameters to allow for unit system specification.
 */
 
 /* Preprocessing */
@@ -57,6 +59,7 @@
 #define GREEN_LENGTH 48
 #define ERROR_LENGTH 1600
 #define PRINT_VALUES false
+#define PRINT_DEBUG false
 
 /* Declarations */
 
@@ -89,7 +92,9 @@ long uSToCentimeters(long microseconds);
 
 void setup() {
   /* initialize serial communication for testing */
-  Serial.begin(9600);
+  if ( (PRINT_VALUES == true) || (PRINT_DEBUG == true ) ) {
+    Serial.begin(9600);
+  }
   /* set our echo and trig pin modes here to save processing time */
   pinMode(echoPin, INPUT);
   pinMode(trigPin, OUTPUT);
@@ -151,23 +156,30 @@ void stateCheck(int led) {
   if ( led == redPin ) { 
     if ( is_red == false ) {
       switchLED(&setRed);
-      Serial.print("State change: RED");
-      Serial.println();
+      if ( PRINT_DEBUG == true ) { 
+        Serial.print("State change: RED");
+        Serial.println();
+      }
 
     } 
   }
   else if ( led == yellowPin ) {
     if ( is_yellow == false ) { 
       switchLED(&setYellow);
-      Serial.print("State change: YELLOW");
-      Serial.println();
+      if ( PRINT_DEBUG == true ) {
+        Serial.print("State change: YELLOW");
+        Serial.println();
+      }
+
     }
   }
   else if ( led == greenPin ) {
     if ( is_green == false ) {
       switchLED(&setGreen);
-      Serial.print("State change: GREEN");
-      Serial.println();
+      if ( PRINT_DEBUG == true ) {
+        Serial.print("State change: RED");
+        Serial.println();
+      }
     }
   }
 }
